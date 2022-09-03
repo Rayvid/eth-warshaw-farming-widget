@@ -3,7 +3,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border: 3px solid rgb(0, 87, 183);
+  border: 3px solid #EF4423;
   border-radius: 10px;
   margin: 20px;
 }
@@ -33,7 +33,7 @@
   line-height: 20px;
   font-family: var(--inter);
   font-weight: 500;
-  color: blue;
+  color: #EF4423;
 }
 
 .walletInfoWrapper>.walletInfo:nth-child(1),

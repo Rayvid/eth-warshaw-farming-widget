@@ -65,7 +65,6 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
     });
   }, [selectedPool, SDK, walletAddress]);
 
-
   const handleStake = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const amount = prompt('Enter amount to stake:');
 
@@ -165,8 +164,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [SDK, selectedPool.index, walletAddress, youStaked,stakeTokenSymbol, rewardTokenSymbol]);
-
+  }, [SDK, selectedPool.index, walletAddress, youStaked, stakeTokenSymbol, rewardTokenSymbol]);
 
   return (
     <div
@@ -174,7 +172,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
         position: 'absolute',
         top: '10%',
         left: '30%',
-        border: '2px solid rgb(0, 87, 183)',
+        border: '2px solid #EF4423',
         borderRadius: '10px',
         background: 'white',
         padding: '20px',
@@ -268,11 +266,11 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
               )}
             </span>
           </p>
+          <div style={{ display: 'flex', justifyContent: 'end' }}>
+            <button onClick={handleHarvest}>HARVEST</button>
+          </div>
         </>
       )}
-      <div style={{ display: 'flex', justifyContent: 'end' }}>
-        <button onClick={handleHarvest}>HARVEST</button>
-      </div>
       <hr />
       <div style={{ display: 'flex', justifyContent: 'end' }}>
         <button

@@ -5,6 +5,7 @@ import { XChainStakingSDK } from './sdk';
 import { PoolType, NETWORKS, ADMIN_MODE } from './sdk/constants';
 import Pool from './components/pool';
 import Stake from './components/stake';
+import cg from './assets/cg.png'
 import './App.css';
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
 
   return (
     <div style={{ margin: '50px' }}>
+      <img alt='logo' src={cg} style={{width: '300px'}}></img>
       <div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
           {status === 'initializing' && <div>Synchronisation with MetaMask ongoing...</div>}
@@ -119,7 +121,7 @@ function App() {
               position: 'absolute',
               top: '10%',
               left: '30%',
-              border: '2px solid rgb(0, 87, 183)',
+              border: '2px solid #EF4423',
               borderRadius: '10px',
               background: 'white',
               padding: '20px',

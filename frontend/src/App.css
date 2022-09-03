@@ -1,6 +1,4 @@
 body {
-  background: rgb(238, 238, 242);
-  background: linear-gradient(187deg, rgba(238, 238, 242, 1) 0%, rgba(216, 216, 228, 1) 50%, rgba(168, 224, 236, 1) 100%);
   min-height: 150vh;
 }
 
@@ -9,7 +7,7 @@ button {
   margin: 0 5px;
   padding: 5px;
   cursor: pointer;
-  background-color: black;
+  background-color: #333333;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -28,8 +26,8 @@ select {
 }
 
 hr {
-  background-color: rgb(0, 87, 183);
-  border: 1px solid rgb(0, 87, 183);
+  background-color: #EF4423;
+  border: 1px solid #EF4423;
 }
 
 .exchangePrice {
