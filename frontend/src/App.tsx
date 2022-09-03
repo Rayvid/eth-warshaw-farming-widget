@@ -95,13 +95,9 @@ function App() {
               connect();
             }}
           >
-            {status === 'connected' ? `${account?.slice(0, 5)}...${account?.slice(38, 42)}` : 'CONNECT WALLET'}
+            {status === 'connected' ? `Wallet address: ${account?.slice(0, 5)}...${account?.slice(38, 42)}` : 'CONNECT WALLET'}
           </button>
         </div>
-        {/* <hr />
-        use Dapp
-        <button onClick={() => deactivate()}>Disconnect</button>
-        <button onClick={() => activateBrowserWallet()}>activateBrowserWallet connect ?</button> */}
         <hr />
         {ADMIN_MODE && <button onClick={() => setCreatePoolOpen(true)}>CREATE NEW POOL</button>}
         {pools.map((pool, index) => (

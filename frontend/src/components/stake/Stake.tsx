@@ -172,7 +172,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
     <div
       style={{
         position: 'absolute',
-        top: '15%',
+        top: '10%',
         left: '30%',
         border: '2px solid rgb(0, 87, 183)',
         borderRadius: '10px',
