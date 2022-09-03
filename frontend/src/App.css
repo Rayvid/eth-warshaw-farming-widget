@@ -1,0 +1,47 @@
+body {
+  background: rgb(238,238,242);
+  background: linear-gradient(187deg, rgba(238,238,242,1) 0%, rgba(216,216,228,1) 50%, rgba(168,224,236,1) 100%);
+  min-height: 150vh;
+}
+
+button {
+  border-radius: 5px;
+  margin: 0 5px;
+  padding: 5px;
+  cursor: pointer;
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  margin: 10px;
+}
+
+p {
+  margin: 7px;
+}
+
+input, select {
+  padding: 10px;
+  margin: 10px;
+}
+
+hr {
+  background-color: rgb(0, 87, 183);
+  border: 1px solid rgb(0, 87, 183);
+}
+
+.exchangePrice {
+  font-size: 12px;
+  color: green;
+  margin-left: 15px;
+}
+
+.newPool>p{
+  /* color: red; */
+  /* margin: 0; */
+}
+.newPool>input{
+  /* color: red; */
+  margin: 0;
+}
