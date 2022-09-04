@@ -31,6 +31,7 @@ jobs:
         NODE_ENV=development yarn install
     - name: Production Build
       run: |
+        cd frontend
         NODE_ENV=development yarn build
     # - name: Configure AWS Credentials
       # uses: aws-actions/configure-aws-credentials@v1
