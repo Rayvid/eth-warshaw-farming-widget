@@ -1,9 +1,7 @@
 import { ethers } from "ethers"
-import { WeiPerEther } from "@ethersproject/constants"
 import { BigNumber } from "@ethersproject/bignumber";
-import axios from 'axios'
 
-import { OWLRACLE_API_KEY, ABI, PoolType, ERC20_CONTRACT_INTERFACE } from './constants'
+import { ABI, PoolType, ERC20_CONTRACT_INTERFACE } from './constants'
 
 
 declare global {
@@ -52,87 +50,14 @@ export class XChainStakingSDK {
   }
 
   /**
-   * Request to get connected account native contract balance
-   * uses window provider
-   * @returns balance / wei
-   */
-  public async getBalance(): Promise<number> {
-    const account = await this.getAccount();
-    const balance = await provider.send('eth_getBalance', [account, 'latest']);
-
-    const result = balance.toString(10) / Number(WeiPerEther);
-    return result;
-  }
-
-  /**
-   * Request to sign and send transaction
-   * uses window provider
-   * @param to receiver wallet id
-   * @param value wei amount in toString(16) format
-   * @returns transaction hash
-   */
-  public async sendTransaction(
-    to: string,
-    value: string
-  ): Promise<any> {
-    const account = await this.getAccount();
-    const txHash = await provider.send(
-      'eth_sendTransaction',
-      [{
-        from: account,
-        to,
-        value
-      }],
-    );
-
-    return txHash;
-  }
-
-  /**
-   * Request to get gas price of current connected chain
-   * uses window provider
-   * @returns the current price per gas in wei.
-   */
-  public async getGasPrice(): Promise<number> {
-    const result = await provider.send('eth_gasPrice', []);
-
-    return result
-  }
-
-
-  /**
-   *
-   * @param contractAddressOrName
-   * @param receiverAddress receiver wallet id
-   * @param value string amount * token contract decimals
-   * @returns transaction receipt
-   */
-  public async sendTokenContractTransaction(
-    contractAddressOrName: string,
-    receiverAddress: string,
-    value: string
-  ): Promise<any> {
-    const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
-    const contract = new ethers.Contract(contractAddressOrName, ERC20_CONTRACT_INTERFACE, signer);
-    const gas = await axios.get('https://owlracle.info/bsc/gas', {
-      params: { apikey: OWLRACLE_API_KEY },
-    });
-    const gasPrice = gas.data.avgGas.toFixed();
-    const tx = await contract.transfer(receiverAddress, value, {
-      gasLimit: gasPrice,
-    });
-
-    const receipt = await tx.wait();
-    return receipt;
-  }
-
-  /**
    *
    * @param tokenAddress string token address
    * @param contractAddress wallet/contract address
    * @returns number formatted with contract decimal number
    */
-  public async getTokenContractBalance(tokenAddress: string, contractAddress: string,
+  public async getTokenContractBalance(
+    tokenAddress: string,
+    contractAddress: string,
   ): Promise<number> {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const token = new ethers.Contract(tokenAddress, ERC20_CONTRACT_INTERFACE, signer);
@@ -150,6 +75,7 @@ export class XChainStakingSDK {
     let result: PoolType[] = [];
     for (let i = 0; i < Number(poolLength.toString()); i++) {
       const pool = await contract.pools(i);
+      console.log('pool',pool);
       result.push({
         index: i,
         title: pool.name,
@@ -158,7 +84,7 @@ export class XChainStakingSDK {
         duration: pool.duration,
         chainId,
         stakeTokenAddress: pool.stakeTokenAddress,
-        harvestTokenAddress: pool.harvestTokenAddress,
+        rewardTokenAddress: pool.rewardTokenAddress,
         totalShares: pool.totalShares,
         totalFund: pool.totalFund
       })
@@ -167,13 +93,16 @@ export class XChainStakingSDK {
   }
 
   public async createNewPool(
-    _stakeTokenAddress: string,_harvestTokenAddress: string, _name: string,
-    _apr: number, _duration: number
+    _stakeTokenAddress: string,
+    _rewardTokenAddress: string,
+    _name: string,
+    _apr: number,
+    _duration: number
   ): Promise<any> {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
-    const createPoolTransaction = await contract.createPool(_stakeTokenAddress, _harvestTokenAddress, _name, _apr, _duration)
+    const createPoolTransaction = await contract.createPool(_stakeTokenAddress, _rewardTokenAddress, _name, _apr, _duration)
     await createPoolTransaction.wait();
   }
 
@@ -184,25 +113,15 @@ export class XChainStakingSDK {
   ): Promise<any> {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
-    const gas = await axios.get('https://owlracle.info/bsc/gas', {
-      params: { apikey: OWLRACLE_API_KEY },
-    });
-    const gasPrice = gas.data.avgGas.toFixed();
-    console.log('stake gas', gasPrice);
-
-    const provider2 = new ethers.providers.Web3Provider(window.ethereum)
-    const provGasPrice = await provider2.getGasPrice()
-    console.log('provGasPrice', provGasPrice.toString());
 
     const erc20 = new ethers.Contract(_tokenAddress, ERC20_CONTRACT_INTERFACE, signer);
-    await erc20.approve(this.contractAddress, _amount);
-    const tx = await contract.stake(
-      _amount,
-      _poolIndex, {
-      // CHECK GAS LIMIT
-      // 140k-135k
-      gasLimit: 240000,
-    })
+    const approve = await erc20.approve(this.contractAddress, _amount);
+    await approve.wait()
+
+    const gasLimit = await contract.estimateGas.stake(_amount, _poolIndex)
+    console.log('stake gasLimit', gasLimit.toString());
+
+    const tx = await contract.stake(_amount, _poolIndex, { gasLimit })
     await tx.wait()
     return tx
   }
@@ -214,18 +133,10 @@ export class XChainStakingSDK {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
-    const gas = await axios.get('https://owlracle.info/bsc/gas', {
-      params: { apikey: OWLRACLE_API_KEY },
-    });
-    const gasPrice = gas.data.avgGas.toFixed();
-    console.log('withdraw gas', gasPrice);
+    const gasLimit = await contract.estimateGas.withdraw(_amount, _poolIndex,)
+    console.log('withdraw gasLimit', gasLimit.toString());
 
-    const withDrawTx = await contract.withdraw(
-       _amount, _poolIndex, {
-      // 55k-50k
-      gasLimit: 55000
-    });
-
+    const withDrawTx = await contract.withdraw(_amount, _poolIndex, { gasLimit });
     await withDrawTx.wait();
     return withDrawTx
   }
@@ -237,17 +148,10 @@ export class XChainStakingSDK {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
-    const gas = await axios.get('https://owlracle.info/bsc/gas', {
-      params: { apikey: OWLRACLE_API_KEY },
-    });
-    const gasPrice = gas.data.avgGas.toFixed();
-    console.log('withdrawERC gas', gasPrice);
+    const gasLimit = await contract.estimateGas.withdrawERC(_tokenAddress, _amount,)
+    console.log('withdrawERC gasLimit', gasLimit.toString());
 
-    const withdrawTx = await contract.withdrawERC(_tokenAddress, _amount, {
-      // 70k-?
-      gasLimit: 70000
-    });
-
+    const withdrawTx = await contract.withdrawERC(_tokenAddress, _amount, { gasLimit });
     await withdrawTx.wait();
     return withdrawTx
   }
@@ -259,7 +163,7 @@ export class XChainStakingSDK {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
-    const amount = await contract.getHarvestAmount( _poolIndex, _stakerAddress)
+    const amount = await contract.getHarvestAmount(_poolIndex, _stakerAddress)
     return amount;
   }
 
@@ -269,7 +173,10 @@ export class XChainStakingSDK {
     const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
-    const tx = await contract.harvest(_poolIndex)
+    const gasLimit = await contract.estimateGas.harvest(_poolIndex)
+    console.log('harvest gaslimit', gasLimit.toString());
+
+    const tx = await contract.harvest(_poolIndex, { gasLimit })
     await tx.wait()
     return tx;
   }
@@ -283,13 +190,13 @@ export class XChainStakingSDK {
     const contract = new ethers.Contract(this.contractAddress, ABI, signer);
 
     const erc20 = new ethers.Contract(_tokenAddress, ERC20_CONTRACT_INTERFACE, signer);
-    await erc20.approve(this.contractAddress, _amount);
+    const approve = await erc20.approve(this.contractAddress, _amount);
+    await approve.wait()
 
-    const tx = await contract.fund(
-       _amount, _poolIndex, {
-      // check this
-      gasLimit: 155000
-    })
+    const gasLimit = await contract.estimateGas.fund(_amount, _poolIndex)
+    console.log('fund gaslimit', gasLimit.toString());
+
+    const tx = await contract.fund(_amount, _poolIndex, { gasLimit })
     await tx.wait();
     return tx;
   }
@@ -312,7 +219,8 @@ export class XChainStakingSDK {
    * @param contractAddressOrName string contract address
    * @returns string contract name
    */
-  public async getTokenContractName(contractAddressOrName: string,
+  public async getTokenContractName(
+    contractAddressOrName: string,
   ): Promise<string> {
     const contract = new ethers.Contract(contractAddressOrName, ERC20_CONTRACT_INTERFACE, this.RPC_provider);
     const name = await contract.name();
@@ -324,7 +232,8 @@ export class XChainStakingSDK {
    * @param contractAddressOrName string contract address
    * @returns string contract symbol
    */
-  public async getTokenContractSymbol(contractAddressOrName: string
+  public async getTokenContractSymbol(
+    contractAddressOrName: string
   ): Promise<string> {
     const contract = new ethers.Contract(contractAddressOrName, ERC20_CONTRACT_INTERFACE, this.RPC_provider);
     const symbol = await contract.symbol();
@@ -336,7 +245,8 @@ export class XChainStakingSDK {
   * @param contractAddressOrName string contract address
   * @returns string contract symbol
   */
-  public async getTokenContractDecimals(contractAddressOrName: string
+  public async getTokenContractDecimals(
+    contractAddressOrName: string
   ): Promise<number> {
     const contract = new ethers.Contract(contractAddressOrName, ERC20_CONTRACT_INTERFACE, this.RPC_provider);
     const decimals = await contract.decimals()

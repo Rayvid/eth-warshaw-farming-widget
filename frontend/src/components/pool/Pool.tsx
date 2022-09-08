@@ -4,6 +4,7 @@ import { XChainStakingSDK } from '../../sdk';
 import { PoolType, NETWORKS } from '../../sdk/constants';
 import styles from './pool.module.css';
 
+
 type Props = {
   pool: PoolType;
   connect: () => Promise<string[] | null>;
@@ -36,7 +37,7 @@ const PoolView: React.FC<Props> = ({
     SDK.getTokenContractSymbol(pool.stakeTokenAddress).then((symbol: string) => {
       setPoolStakeTokenSymbol(symbol);
     });
-    SDK.getTokenContractSymbol(pool.harvestTokenAddress).then((symbol: string) => {
+    SDK.getTokenContractSymbol(pool.rewardTokenAddress).then((symbol: string) => {
       setPoolRewardTokenSymbol(symbol);
     });
     SDK.getTokenContractDecimals(pool.stakeTokenAddress).then((decimals: number) => {
@@ -82,7 +83,7 @@ const PoolView: React.FC<Props> = ({
           </div>
           <div className={styles.walletInfo}>
             <span>Reward token</span>
-            <span style={{ fontSize: '6px' }}>{pool.harvestTokenAddress}</span>
+            <span style={{ fontSize: '6px' }}>{pool.rewardTokenAddress}</span>
             <span style={{ fontSize: '10px' }}>{poolRewardTokenSymbol}</span>
           </div>
 

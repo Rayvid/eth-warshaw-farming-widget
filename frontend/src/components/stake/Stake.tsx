@@ -15,7 +15,8 @@ type Props = {
 };
 
 const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, walletAddress, fetchPools }) => {
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletStakeBalance, setWalletStakeBalance] = useState<number | null>(null);
+  const [walletRewardBalance, setWalletRewardBalance] = useState<number | null>(null);
   const [stakeTokenName, setStakeTokenName] = useState<string | null>(null);
   const [rewardTokenName, setRewardTokenName] = useState<string | null>(null);
   const [stakeTokenSymbol, setStakeTokenSymbol] = useState<string | null>(null);
@@ -38,21 +39,25 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
     });
 
     SDK.getTokenContractBalance(selectedPool.stakeTokenAddress, walletAddress).then((result) => {
-      setWalletBalance(result);
+      setWalletStakeBalance(result);
+    });
+
+    SDK.getTokenContractBalance(selectedPool.rewardTokenAddress, walletAddress).then((result) => {
+      setWalletRewardBalance(result);
     });
 
     SDK.getTokenContractName(selectedPool.stakeTokenAddress).then((result) => {
       setStakeTokenName(result);
     });
 
-    SDK.getTokenContractName(selectedPool.harvestTokenAddress).then((result) => {
+    SDK.getTokenContractName(selectedPool.rewardTokenAddress).then((result) => {
       setRewardTokenName(result);
     });
 
     SDK.getTokenContractSymbol(selectedPool.stakeTokenAddress).then((result) => {
       setStakeTokenSymbol(result);
     });
-    SDK.getTokenContractSymbol(selectedPool.harvestTokenAddress).then((result) => {
+    SDK.getTokenContractSymbol(selectedPool.rewardTokenAddress).then((result) => {
       setRewardTokenSymbol(result);
     });
 
@@ -60,11 +65,10 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
       setStakeTokenDecimals(result);
     });
 
-    SDK.getTokenContractDecimals(selectedPool.harvestTokenAddress).then((result) => {
+    SDK.getTokenContractDecimals(selectedPool.rewardTokenAddress).then((result) => {
       setRewardTokenDecimals(result);
     });
   }, [selectedPool, SDK, walletAddress]);
-
 
   const handleStake = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const amount = prompt('Enter amount to stake:');
@@ -95,7 +99,8 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
       const value = Number(amount) * 10 ** stakeTokenDecimals;
 
       SDK.withdraw(String(value), selectedPool.index)
-        .then(() => {
+        .then((res) => {
+          console.log('withdraw result =', res);
           setWaitingTransaction(false);
           setStakeOpen(false);
           fetchPools();
@@ -109,7 +114,8 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
     setWaitingTransaction(true);
 
     SDK.harvest(selectedPool.index)
-      .then(() => {
+      .then((res) => {
+        console.log('harvest result =', res);
         setWaitingTransaction(false);
         setStakeOpen(false);
         fetchPools();
@@ -127,7 +133,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
 
       const value = Number(amount) * 10 ** rewardTokenDecimals;
 
-      SDK.fund(selectedPool.harvestTokenAddress, String(value), selectedPool.index)
+      SDK.fund(selectedPool.rewardTokenAddress, String(value), selectedPool.index)
         .then((result) => {
           console.log('fund result = ', result);
           setWaitingTransaction(false);
@@ -165,8 +171,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [SDK, selectedPool.index, walletAddress, youStaked,stakeTokenSymbol, rewardTokenSymbol]);
-
+  }, [SDK, selectedPool.index, walletAddress, youStaked, stakeTokenSymbol, rewardTokenSymbol]);
 
   return (
     <div
@@ -184,11 +189,22 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
       <p>
         Wallet address: {walletAddress.slice(0, 5)}...{walletAddress.slice(38, 42)}
       </p>
-      {walletBalance && stakeTokenExchangeRate && (
+      {walletStakeBalance && stakeTokenExchangeRate && (
         <p>
-          Wallet balance: {walletBalance} {stakeTokenSymbol}{' '}
+          Wallet Stake balance: {walletStakeBalance} {stakeTokenSymbol}{' '}
           <span className="exchangePrice">
-            {(walletBalance * stakeTokenExchangeRate).toLocaleString('en-US', {
+            {(walletStakeBalance * stakeTokenExchangeRate).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            })}
+          </span>
+        </p>
+      )}
+      {walletRewardBalance && rewardTokenExchangeRate && (
+        <p>
+          Wallet Reward balance: {walletRewardBalance} {rewardTokenSymbol}{' '}
+          <span className="exchangePrice">
+            {(walletRewardBalance * rewardTokenExchangeRate).toLocaleString('en-US', {
               style: 'currency',
               currency: 'USD',
             })}
@@ -233,7 +249,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
           Pool total funds: {Number(selectedPool.totalFund.toString()) / 10 ** rewardTokenDecimals} {rewardTokenSymbol}
           <span className="exchangePrice">
             {(
-              (Number(selectedPool.totalShares.toString()) / 10 ** rewardTokenDecimals) *
+              (Number(selectedPool.totalFund.toString()) / 10 ** rewardTokenDecimals) *
               rewardTokenExchangeRate
             ).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
           </span>
@@ -256,13 +272,13 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
         <button onClick={handleStake}>STAKE</button>
         <button onClick={handleWithdraw}>WITHDRAW</button>
       </div>
-      {rewardTokenDecimals && yourHarvest && stakeTokenDecimals && stakeTokenExchangeRate && (
+      {rewardTokenDecimals && yourHarvest && stakeTokenDecimals && rewardTokenExchangeRate && (
         <>
           <hr />
           <p>
             Amount to harvest: {Number(yourHarvest.toString()) / Math.pow(10, rewardTokenDecimals)} {rewardTokenSymbol}
             <span className="exchangePrice">
-              {((Number(yourHarvest.toString()) / 10 ** stakeTokenDecimals) * stakeTokenExchangeRate).toLocaleString(
+              {((Number(yourHarvest.toString()) / 10 ** stakeTokenDecimals) * rewardTokenExchangeRate).toLocaleString(
                 'en-US',
                 { style: 'currency', currency: 'USD' }
               )}
@@ -303,7 +319,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
                 });
             }}
           >
-            Withdraw
+            ADMIN Withdraw ERC20
           </button>
           <button
             onClick={() => {
@@ -320,7 +336,7 @@ const Stake: React.FC<Props> = ({ selectedPool, setSelectedPool, setStakeOpen, w
           </button>
           <button
             onClick={() => {
-              SDK.getTokenContractBalance(selectedPool.harvestTokenAddress, selectedPool.contractAddress)
+              SDK.getTokenContractBalance(selectedPool.rewardTokenAddress, selectedPool.contractAddress)
                 .then((res) => {
                   console.log('erc20 balance : ', res);
                 })
