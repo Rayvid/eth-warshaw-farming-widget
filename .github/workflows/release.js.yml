@@ -1,0 +1,43 @@
+name: Release
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+env:
+  PUBLIC_URL: d27y4w9k11n5k1.cloudfront.net
+  REACT_APP_OWLRACLE_API_KEY: 7019bde5476f4f408fc80953e7f2a929
+  REACT_APP_ADMIN_MODE: true
+  REACT_APP_NETWORKS: '[{"chainId":"0x5","rpcUrl":"https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161","contractAddress":"0x28d0312D3bDa4728CB310c2DF2167C6F94a6a84c"},{"chainId":"0x18704","rpcUrl":"https://rpc-chiado.gnosistestnet.com/","contractAddress":"0x4CDdBedcFD7A04eF7D011B9D779c3349cc59CcF8"}]'
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x]
+        
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Yarn Install
+      run: |
+        cd frontend
+        NODE_ENV=development yarn install
+    - name: Production Build
+      run: |
+        cd frontend
+        NODE_ENV=development yarn build
+    # - name: Configure AWS Credentials
+      # uses: aws-actions/configure-aws-credentials@v1
+      # with:
+        # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        # aws-region: eu-central-1
+    # - name: Deploy app build to S3 bucket
+      # run: aws s3 sync ./build/ s3://${{ secrets.AWS_S3_BUCKET }}
